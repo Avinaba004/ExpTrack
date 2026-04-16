@@ -28,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { ReceiptScanner } from "./receipt-scanner";
 
 const AddTransactionForm = ({ accounts, categories }) => {
   const router = useRouter();
@@ -81,9 +82,42 @@ const AddTransactionForm = ({ accounts, categories }) => {
     (category) => category.type === type
   );
 
+  // Handle receipt data extraction
+  const handleReceiptExtracted = (receiptData, allCategories) => {
+    // Set amount
+    setValue("amount", receiptData.total.toString());
+
+    // Set type to EXPENSE (receipts are always expenses)
+    setValue("type", "EXPENSE");
+
+    // Set date
+    const receiptDate = new Date(receiptData.date);
+    setValue("date", receiptDate);
+
+    // Set description to vendor name
+    setValue("description", receiptData.vendor);
+
+    // Find and set category based on extracted category
+    const extractedCategory = allCategories.find(
+      (cat) =>
+        cat.type === "EXPENSE" &&
+        cat.name.toLowerCase() === receiptData.category.toLowerCase()
+    ) || allCategories.find((cat) => cat.type === "EXPENSE" && cat.name === "Food");
+
+    if (extractedCategory) {
+      setValue("category", extractedCategory.id);
+    }
+
+    toast.info(`Receipt data populated. Please review and submit.`);
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* AI RECIEPT SCANNER */}
+      {/* AI Receipt Scanner */}
+      <ReceiptScanner
+        onDataExtracted={handleReceiptExtracted}
+        categories={categories}
+      />
 
       {/* Type */}
       <div className="space-y-2">
