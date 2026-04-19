@@ -12,11 +12,29 @@ import { Switch } from "@/components/ui/switch";
 import useFetch from "@/hooks/use-fetch";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { convertCurrency, formatCurrencyAmount } from "@/lib/currency";
 
 const AccountCard = ({ account }) => {
   const { name, type, balance, id, isDefault } = account;
+  const [userCurrency, setUserCurrency] = useState("INR");
+
+  // Fetch user's preferred currency
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      try {
+        const response = await fetch("/api/user/currency");
+        if (response.ok) {
+          const data = await response.json();
+          setUserCurrency(data.currency);
+        }
+      } catch (error) {
+        console.error("Failed to fetch currency:", error);
+      }
+    };
+    fetchCurrency();
+  }, []);
 
   const {
     loading: updateDefaultLoading,
@@ -63,7 +81,10 @@ const AccountCard = ({ account }) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${parseFloat(balance).toFixed(2)}
+              {formatCurrencyAmount(
+                convertCurrency(parseFloat(balance), userCurrency),
+                userCurrency
+              )}
             </div>
             <p className="text-xs text-muted-foreground">{type} ACCOUNT</p>
           </CardContent>

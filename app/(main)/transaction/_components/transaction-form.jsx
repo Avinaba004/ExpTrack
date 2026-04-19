@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createTransaction } from "@/actions/transaction";
+import { createTransaction, updateTransaction, getTransaction } from "@/actions/transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { transactionSchema } from "@/app/lib/schema";
 import CreateAccountDrawer from "@/components/create-account-drawer";
@@ -25,13 +25,35 @@ import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Switch } from "@/components/ui/switch";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ReceiptScanner } from "./receipt-scanner";
+import { convertCurrency, formatCurrencyAmount } from "@/lib/currency";
 
 const AddTransactionForm = ({ accounts, categories }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [userCurrency, setUserCurrency] = useState("INR");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingTransactionId, setEditingTransactionId] = useState(null);
+
+  // Fetch user's preferred currency
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      try {
+        const response = await fetch("/api/user/currency");
+        if (response.ok) {
+          const data = await response.json();
+          setUserCurrency(data.currency);
+        }
+      } catch (error) {
+        console.error("Failed to fetch currency:", error);
+      }
+    };
+    fetchCurrency();
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -52,27 +74,68 @@ const AddTransactionForm = ({ accounts, categories }) => {
     },
   });
 
+  // Load transaction data if editing
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (editId) {
+      setEditingTransactionId(editId);
+      setIsEditing(true);
+
+      const fetchTransactionData = async () => {
+        try {
+          const result = await getTransaction(editId);
+          if (result.success) {
+            const txData = result.data;
+            // Populate form with existing data
+            setValue("type", txData.type);
+            setValue("amount", txData.amount.toString());
+            setValue("description", txData.description || "");
+            setValue("accountId", txData.accountId);
+            setValue("category", txData.category);
+            setValue("date", new Date(txData.date));
+            setValue("isRecurring", txData.isRecurring);
+            if (txData.recurringInterval) {
+              setValue("recurringInterval", txData.recurringInterval);
+            }
+          } else {
+            toast.error("Failed to load transaction");
+          }
+        } catch (error) {
+          console.error("Error loading transaction:", error);
+          toast.error("Failed to load transaction");
+        }
+      };
+
+      fetchTransactionData();
+    }
+  }, [searchParams, setValue]);
+
   const {
     loading: transactionLoading,
     fn: transactionFn,
     data: transactionResult,
-  } = useFetch(createTransaction);
+  } = useFetch(isEditing ? updateTransaction : createTransaction);
 
   const onSubmit = (data) => {
     const formData = {
       ...data,
       amount: parseFloat(data.amount),
     };
-     transactionFn(formData);
+    if (isEditing && editingTransactionId) {
+      transactionFn(editingTransactionId, formData);
+    } else {
+      transactionFn(formData);
+    }
   };
 
   useEffect(() => {
     if (transactionResult && !transactionLoading) {
-      toast.success("Transaction created successfully");
+      const message = isEditing ? "Transaction updated successfully" : "Transaction created successfully";
+      toast.success(message);
       reset();
       router.push(`/account/${transactionResult.data.accountId}`);
     }
-  }, [transactionResult, transactionLoading]);
+  }, [transactionResult, transactionLoading, isEditing]);
 
   const type = watch("type");
   const isRecurring = watch("isRecurring");
@@ -165,7 +228,10 @@ const AddTransactionForm = ({ accounts, categories }) => {
             <SelectContent>
               {accounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
-                  {account.name} (${parseFloat(account.balance).toFixed(2)})
+                  {account.name} ({formatCurrencyAmount(
+                    convertCurrency(parseFloat(account.balance), userCurrency),
+                    userCurrency
+                  )})
                 </SelectItem>
               ))}
               <CreateAccountDrawer>
@@ -299,7 +365,7 @@ const AddTransactionForm = ({ accounts, categories }) => {
           className="w-[200px]"
           disabled={transactionLoading}
         >
-          Create Transaction..
+          {isEditing ? "Update Transaction" : "Create Transaction"}
         </Button>
       </div>
     </form>

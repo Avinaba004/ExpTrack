@@ -1,0 +1,21 @@
+model Expense {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  category  String
+  date      DateTime @default(now())
+  description String?
+}
+
+model Income {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  source    String
+  date      DateTime @default(now())
+  description String?
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  expenses  Expense[]
+}

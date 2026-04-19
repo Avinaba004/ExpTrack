@@ -87,3 +87,97 @@ function calculateNextRecurringDate(startDate, interval) {
 
   return date;
 }
+
+// Get single transaction
+export async function getTransaction(transactionId) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) throw new Error("User not found");
+
+    const transaction = await db.transaction.findUnique({
+      where: { id: transactionId, userId: user.id },
+    });
+
+    if (!transaction) throw new Error("Transaction not found");
+
+    return { success: true, data: serializeAmount(transaction) };
+  } catch (error) {
+    console.error("Error fetching transaction:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Update transaction
+export async function updateTransaction(transactionId, data) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) throw new Error("User not found");
+
+    // Get the existing transaction to calculate balance adjustments
+    const existingTransaction = await db.transaction.findUnique({
+      where: { id: transactionId, userId: user.id },
+    });
+
+    if (!existingTransaction) throw new Error("Transaction not found");
+
+    const account = await db.account.findUnique({
+      where: { id: data.accountId, userId: user.id },
+    });
+
+    if (!account) throw new Error("Account not found");
+
+    // Calculate balance adjustments
+    const oldBalanceChange =
+      existingTransaction.type === "EXPENSE"
+        ? -existingTransaction.amount.toNumber()
+        : existingTransaction.amount.toNumber();
+
+    const newBalanceChange =
+      data.type === "EXPENSE" ? -data.amount : data.amount;
+
+    const balanceAdjustment = newBalanceChange - oldBalanceChange;
+    const newBalance = account.balance.toNumber() + balanceAdjustment;
+
+    // Update transaction and adjust account balance
+    const transaction = await db.$transaction(async (tx) => {
+      const updatedTransaction = await tx.transaction.update({
+        where: { id: transactionId },
+        data: {
+          ...data,
+          nextRecurringDate:
+            data.isRecurring && data.recurringInterval
+              ? calculateNextRecurringDate(data.date, data.recurringInterval)
+              : null,
+        },
+      });
+
+      // Update account balance
+      await tx.account.update({
+        where: { id: data.accountId },
+        data: { balance: newBalance },
+      });
+
+      return updatedTransaction;
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/account/${transaction.accountId}`);
+
+    return { success: true, data: serializeAmount(transaction) };
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    return { success: false, error: error.message };
+  }
+}

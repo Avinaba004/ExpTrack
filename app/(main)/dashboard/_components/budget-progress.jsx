@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Pencil, Check, X, AlertCircle } from "lucide-react";
 import useFetch from "@/hooks/use-fetch";
 import { toast } from "sonner";
+import { convertCurrency, formatCurrencyAmount } from "@/lib/currency";
 
 import {
   Card,
@@ -22,6 +23,23 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
   const [newBudget, setNewBudget] = useState(
     initialBudget?.amount?.toString() || ""
   );
+  const [userCurrency, setUserCurrency] = useState("INR");
+
+  // Fetch user's preferred currency
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      try {
+        const response = await fetch("/api/user/currency");
+        if (response.ok) {
+          const data = await response.json();
+          setUserCurrency(data.currency);
+        }
+      } catch (error) {
+        console.error("Failed to fetch currency:", error);
+      }
+    };
+    fetchCurrency();
+  }, []);
 
   const {
     loading: isLoading,
@@ -103,9 +121,7 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
               <>
                 <CardDescription>
                   {initialBudget
-                    ? `Rs. ${currentExpenses.toFixed(
-                        2
-                      )} of Rs. ${initialBudget.amount.toFixed(2)} spent`
+                    ? `${formatCurrencyAmount(convertCurrency(currentExpenses, userCurrency), userCurrency)} of ${formatCurrencyAmount(convertCurrency(initialBudget.amount, userCurrency), userCurrency)} spent`
                     : "No budget set"}
                 </CardDescription>
                 <Button

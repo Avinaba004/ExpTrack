@@ -4,9 +4,11 @@ import React, { Suspense } from "react";
 import TransactionsTable from "../_components/transaction-table";
 import { BarLoader } from "react-spinners";
 import AccountChart from "../_components/account-chart";
+import { AccountBalance } from "../_components/account-balance";
 
 const AccountsPage = async ({ params }) => {
-  const accountData = await getAccountWithTransactions(params.id);
+  const { id } = await params;
+  const accountData = await getAccountWithTransactions(id);
 
   if (!accountData) {
     notFound();
@@ -30,12 +32,7 @@ const AccountsPage = async ({ params }) => {
         </div>
 
         <div className="text-right pb-2">
-          <div
-            className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400
-               bg-clip-text text-transparent"
-          >
-            ${parseFloat(account.balance).toFixed(2)}
-          </div>
+          <AccountBalance balance={account.balance} />
           <p className="text-sm text-muted-foreground">
             {account._count.transactions} Transactions
           </p>

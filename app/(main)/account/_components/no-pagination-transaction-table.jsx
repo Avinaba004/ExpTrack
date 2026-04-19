@@ -52,6 +52,7 @@ import { bulkDeleteTransactions } from "@/actions/account";
 import useFetch from "@/hooks/use-fetch";
 import { BarLoader } from "react-spinners";
 import { useRouter } from "next/navigation";
+import { convertCurrency, formatCurrencyAmount, CURRENCY_SYMBOLS } from "@/lib/currency";
 
 const RECURRING_INTERVALS = {
   DAILY: "Daily",
@@ -69,7 +70,24 @@ export function NoPaginationTransactionTable({ transactions }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [recurringFilter, setRecurringFilter] = useState("");
+  const [userCurrency, setUserCurrency] = useState("INR");
   const router = useRouter();
+
+  // Fetch user's preferred currency
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      try {
+        const response = await fetch("/api/user/currency");
+        if (response.ok) {
+          const data = await response.json();
+          setUserCurrency(data.currency);
+        }
+      } catch (error) {
+        console.error("Failed to fetch currency:", error);
+      }
+    };
+    fetchCurrency();
+  }, []);
 
   // Memoized filtered and sorted transactions
   const filteredAndSortedTransactions = useMemo(() => {
@@ -346,8 +364,11 @@ export function NoPaginationTransactionTable({ transactions }) {
                         : "text-green-500"
                     )}
                   >
-                    {transaction.type === "EXPENSE" ? "-" : "+"}$
-                    {transaction.amount.toFixed(2)}
+                    {transaction.type === "EXPENSE" ? "-" : "+"}
+                    {formatCurrencyAmount(
+                      convertCurrency(transaction.amount, userCurrency),
+                      userCurrency
+                    )}
                   </TableCell>
                   <TableCell>
                     {transaction.isRecurring ? (
