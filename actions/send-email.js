@@ -1,18 +1,29 @@
-import { Resend } from "resend";
+import { render } from "@react-email/render";
+import { brevoEmailService } from "@/lib/brevo/email-service";
 
 export async function sendEmail({ to, subject, react }) {
   console.log("➡️ sendEmail called", { to, subject });
 
-  const resend = new Resend(process.env.RESEND_API_KEY || "");
+  try {
+    if (!react) {
+      throw new Error("A React email template is required.");
+    }
 
-  const result = await resend.emails.send({
-    from: "Finance App <onboarding@resend.dev>",
-    to,
-    subject,
-    react,
-  });
+    const html = await render(react);
+    const text = await render(react, { plainText: true });
 
-  console.log("✅ Resend result:", result);
+    const result = await brevoEmailService.sendTransactionalEmail({
+      to,
+      subject,
+      htmlContent: html,
+      textContent: text,
+      tags: ["app-email"],
+    });
 
-  return result;
+    console.log("✅ Brevo email result:", result);
+    return result;
+  } catch (error) {
+    console.error("Brevo email send failed:", error);
+    return { success: false, error: error.message };
+  }
 }

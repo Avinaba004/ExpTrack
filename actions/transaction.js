@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/prisma";
+import { maybeSendBudgetBreachNotification } from "@/lib/brevo/budget-alert";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
@@ -57,6 +58,20 @@ export async function createTransaction(data) {
 
     revalidatePath("/dashboard");
     revalidatePath(`/account/${transaction.accountId}`);
+
+    if (transaction.type === "EXPENSE") {
+      try {
+        console.log(`[TRANSACTION] Expense created (${transaction.amount}), checking budget alert...`);
+        const alertResult = await maybeSendBudgetBreachNotification({
+          userId: user.id,
+          accountId: transaction.accountId,
+          transactionDate: transaction.date,
+        });
+        console.log(`[TRANSACTION] Budget alert result:`, alertResult);
+      } catch (notificationError) {
+        console.error("[TRANSACTION] Budget breach notification failed after transaction creation:", notificationError);
+      }
+    }
 
     return { success: true, data: serializeAmount(transaction) };
   } catch (error) {
@@ -174,6 +189,20 @@ export async function updateTransaction(transactionId, data) {
 
     revalidatePath("/dashboard");
     revalidatePath(`/account/${transaction.accountId}`);
+
+    if (transaction.type === "EXPENSE") {
+      try {
+        console.log(`[TRANSACTION] Expense updated (${transaction.amount}), checking budget alert...`);
+        const alertResult = await maybeSendBudgetBreachNotification({
+          userId: user.id,
+          accountId: transaction.accountId,
+          transactionDate: transaction.date,
+        });
+        console.log(`[TRANSACTION] Budget alert result:`, alertResult);
+      } catch (notificationError) {
+        console.error("[TRANSACTION] Budget breach notification failed after transaction update:", notificationError);
+      }
+    }
 
     return { success: true, data: serializeAmount(transaction) };
   } catch (error) {
