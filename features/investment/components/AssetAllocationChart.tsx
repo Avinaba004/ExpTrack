@@ -24,7 +24,7 @@ export function AssetAllocationChart({ allocation }: AssetAllocationChartProps) 
   if (!allocation || allocation.length === 0) {
     return (
       <Card className="h-full">
-        <CardHeader>
+        <CardHeader className="">
           <CardTitle>Asset Allocation</CardTitle>
           <CardDescription>No data available</CardDescription>
         </CardHeader>
