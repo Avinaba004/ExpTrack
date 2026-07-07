@@ -23,10 +23,7 @@ export function AccountBalance({ balance }) {
   }, []);
 
   return (
-    <div
-      className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400
-         bg-clip-text text-transparent"
-    >
+    <div className="text-3xl font-bold tracking-tight text-foreground">
       {formatCurrencyAmount(
         convertCurrency(parseFloat(balance), userCurrency),
         userCurrency

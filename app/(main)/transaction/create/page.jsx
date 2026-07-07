@@ -7,10 +7,15 @@ const AddTransactionPage = async ({ searchParams }) => {
   const isEditing = !!searchParams?.edit;
   
   return (
-    <div className="max-w-3xl mx-auto px-5">
-      <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400 bg-clip-text text-transparent">
-        {isEditing ? "Edit Transaction" : "Add Transaction"}
-      </h1>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {isEditing ? "Edit Transaction" : "Add Transaction"}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {isEditing ? "Update the details of your transaction." : "Record a new income or expense entry."}
+        </p>
+      </div>
 
       <AddTransactionForm accounts={accounts} categories={defaultCategories} />
     </div>

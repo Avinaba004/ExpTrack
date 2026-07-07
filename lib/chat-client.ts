@@ -5,6 +5,7 @@
 
 interface ChatRequest {
   question: string;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 interface ChatResponse {
@@ -19,10 +20,11 @@ interface ChatError {
 }
 
 /**
- * Send a question to the financial chat API
+ * Send a question to the financial chat API with history
  */
 export async function askFinancialAssistant(
-  question: string
+  question: string,
+  history?: Array<{ role: "user" | "assistant"; content: string }>
 ): Promise<ChatResponse | ChatError> {
   try {
     const response = await fetch("/api/chat", {
@@ -32,6 +34,7 @@ export async function askFinancialAssistant(
       },
       body: JSON.stringify({
         question,
+        history,
       } as ChatRequest),
     });
 

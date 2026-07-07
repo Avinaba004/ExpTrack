@@ -11,13 +11,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -25,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 const DATE_RANGES = {
   "7D": { label: "Last 7 Days", days: 7 },
@@ -32,6 +26,28 @@ const DATE_RANGES = {
   "3M": { label: "Last 3 Months", days: 90 },
   "6M": { label: "Last 6 Months", days: 180 },
   ALL: { label: "All Time", days: null },
+};
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover border border-border rounded-xl px-4 py-3 shadow-lg text-sm space-y-1">
+        <p className="font-semibold text-foreground mb-2">{label}</p>
+        {payload.map((entry) => (
+          <div key={entry.name} className="flex items-center justify-between gap-6">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="h-2 w-2 rounded-full inline-block" style={{ backgroundColor: entry.fill }} />
+              {entry.name}
+            </span>
+            <span className="font-semibold" style={{ color: entry.fill }}>
+              ₹{Number(entry.value).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
 };
 
 const AccountChart = ({ transactions }) => {
@@ -44,32 +60,28 @@ const AccountChart = ({ transactions }) => {
       ? startOfDay(subDays(now, range.days))
       : startOfDay(new Date(0));
 
-    //filter transactions within date range
     const filtered = transactions.filter(
       (t) => new Date(t.date) >= startDate && new Date(t.date) <= endOfDay(now)
     );
 
-    // Group transactions by date
     const grouped = filtered.reduce((acc, transaction) => {
       const date = format(new Date(transaction.date), "MMM dd");
       if (!acc[date]) {
         acc[date] = { date, income: 0, expense: 0 };
       }
       if (transaction.type === "INCOME") {
-        acc[date].income += transaction.amount;
+        acc[date].income += Number(transaction.amount);
       } else {
-        acc[date].expense += transaction.amount;
+        acc[date].expense += Number(transaction.amount);
       }
       return acc;
     }, {});
 
-    // Convert grouped object to array and sort by date
     return Object.values(grouped).sort(
       (a, b) => new Date(a.date) - new Date(b.date)
     );
   }, [transactions, dateRange]);
 
-  // Calculate totals for the selected period
   const totals = useMemo(() => {
     return filteredData.reduce(
       (acc, day) => ({
@@ -81,95 +93,87 @@ const AccountChart = ({ transactions }) => {
   }, [filteredData]);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
-        <CardTitle className="text-base text-2xl font-bold">
-          TRANSACTIONS OVERVIEW
-        </CardTitle>
+    <div className="p-6 space-y-6">
+      {/* Chart Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-base font-semibold text-foreground tracking-tight">Transactions Overview</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Income vs Expenses for the selected period</p>
+        </div>
         <Select onValueChange={setDateRange} defaultValue={dateRange}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[150px] rounded-xl h-9 text-sm bg-muted/30 border-border/50">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(DATE_RANGES).map(([key, { label }]) => {
-              return (
-                <SelectItem key={key} value={key}>
-                  {label}
-                </SelectItem>
-              );
-            })}
+            {Object.entries(DATE_RANGES).map(([key, { label }]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-around mb-6 text-sm">
-          <div className="text-center">
-            <p className="font-semibold">Total Income</p>
-            <p className="text-lg font-bold text-green-500">
-              + Rs. {totals.income.toFixed(2)}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="font-semibold">Total Expenses</p>
-            <p className="text-lg font-bold text-red-500">
-              - Rs. {totals.expense.toFixed(2)}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="font-semibold">Net Balance</p>
-            <p
-              className={`text-lg font-bold ${
-                totals.income - totals.expense >= 0
-                  ? "text-green-500"
-                  : "text-red-500"
-              }`}
-            >
-              {`${
-                totals.income - totals.expense >= 0
-                  ? "Profit is: +"
-                  : "Loss is: -"
-              } Rs. ${Math.abs((totals.income - totals.expense).toFixed(2))}`}
-            </p>
-          </div>
-        </div>
+      </div>
 
-        <div className=" h-[320px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={filteredData}
-              margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="date"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `$${value}`}
-              />
-              <Tooltip />
-              <Bar
-                dataKey="income"
-                name="Income"
-                fill="#4bc477ff"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="expense"
-                name="Expense"
-                fill="#e64343ff"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* Summary Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <ArrowUpRight className="h-4 w-4 text-emerald-600" />
+            <span className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Income</span>
+          </div>
+          <p className="text-xl font-bold text-emerald-600">
+            ₹{totals.income.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        <div className="rounded-xl bg-red-500/5 border border-red-500/20 p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <ArrowDownRight className="h-4 w-4 text-red-600" />
+            <span className="text-xs font-medium text-red-700 uppercase tracking-wide">Expenses</span>
+          </div>
+          <p className="text-xl font-bold text-red-600">
+            ₹{totals.expense.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
+        <div className="rounded-xl bg-primary/5 border border-primary/20 p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-medium text-primary uppercase tracking-wide">Net</span>
+          </div>
+          <p className={`text-xl font-bold ${totals.income - totals.expense >= 0 ? "text-primary" : "text-red-600"}`}>
+            {totals.income - totals.expense >= 0 ? "+" : "-"}₹{Math.abs(totals.income - totals.expense).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
+      </div>
+
+      {/* Bar Chart */}
+      <div className="h-[280px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={filteredData}
+            margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+            barCategoryGap="30%"
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+            <XAxis
+              dataKey="date"
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "hsl(var(--muted-foreground))" }}
+            />
+            <YAxis
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "hsl(var(--muted-foreground))" }}
+              tickFormatter={(value) => `₹${value}`}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
+            <Bar dataKey="income" name="Income" fill="oklch(0.55 0.15 150)" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="expense" name="Expense" fill="oklch(0.6 0.15 20)" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 };
 
