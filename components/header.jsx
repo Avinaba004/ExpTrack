@@ -8,12 +8,11 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "./ui/button"; // Make sure this path is correct
-import { LayoutDashboard, PenBox } from "lucide-react";
+import { LayoutDashboard, PenBox, TrendingUp } from "lucide-react";
 
 const Header = () => {
   return (
-    // UPDATED: Made background more transparent (95 -> 75) and blur stronger (md -> lg)
-    <div className="fixed top-0 w-full bg-muted/55 backdrop-blur-md z-50 border-b border-border/40">
+    <div className="fixed top-0 w-full bg-background/80 backdrop-blur-xl z-50 border-b border-border shadow-sm transition-all">
       <nav className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
@@ -40,6 +39,18 @@ const Header = () => {
                 <Link href="/dashboard" className="flex items-center gap-2">
                   <LayoutDashboard size={16} />
                   <span>Dashboard</span>
+                </Link>
+              </Button>
+
+              {/* Invest Button */}
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full hidden sm:flex border-primary/20 hover:bg-primary/5 text-primary"
+              >
+                <Link href="/investment" className="flex items-center gap-2">
+                  <TrendingUp size={16} />
+                  <span>Invest</span>
                 </Link>
               </Button>
 

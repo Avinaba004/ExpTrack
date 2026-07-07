@@ -1,19 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pencil, Check, X, AlertCircle } from "lucide-react";
+import { Pencil, Check, X, AlertCircle, TrendingUp, Target } from "lucide-react";
 import useFetch from "@/hooks/use-fetch";
 import { toast } from "sonner";
 import { convertCurrency, formatCurrencyAmount } from "@/lib/currency";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateBudget } from "@/actions/budget";
@@ -25,7 +16,6 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
   );
   const [userCurrency, setUserCurrency] = useState("INR");
 
-  // Fetch user's preferred currency
   useEffect(() => {
     const fetchCurrency = async () => {
       try {
@@ -49,17 +39,24 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
   } = useFetch(updateBudget);
 
   const percentUsed = initialBudget
-    ? (currentExpenses / initialBudget.amount) * 100
+    ? Math.min((currentExpenses / initialBudget.amount) * 100, 100)
     : 0;
+  const isOverBudget = initialBudget && currentExpenses > initialBudget.amount;
+  const remaining = initialBudget ? initialBudget.amount - currentExpenses : 0;
+  const daysLeft = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
+
+  const progressColor = isOverBudget
+    ? "bg-red-500"
+    : percentUsed >= 75
+    ? "bg-amber-500"
+    : "bg-primary";
 
   const handleUpdateBudget = async () => {
     const amount = parseFloat(newBudget);
-
     if (isNaN(amount) || amount <= 0) {
       toast.error("Please enter a valid amount");
       return;
     }
-
     await updateBudgetFn(amount);
   };
 
@@ -81,95 +78,142 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
     }
   }, [error]);
 
-  return (
-    <Card className="my-5">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+  if (!initialBudget) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          <Target className="h-6 w-6 text-primary" />
+        </div>
         <div className="flex-1">
-          <CardTitle className="text-sm font-medium">
-            Monthly Budget (Default Account)
-          </CardTitle>
-          <div className="flex items-center gap-2 mt-1">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  value={newBudget}
-                  onChange={(e) => setNewBudget(e.target.value)}
-                  className="w-32"
-                  placeholder="Enter amount"
-                  autoFocus
-                  disabled={isLoading}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleUpdateBudget}
-                  disabled={isLoading}
-                >
-                  <Check className="h-4 w-4 text-green-500" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                >
-                  <X className="h-4 w-4 text-red-500" />
-                </Button>
-              </div>
-            ) : (
-              <>
-                <CardDescription>
-                  {initialBudget
-                    ? `${formatCurrencyAmount(convertCurrency(currentExpenses, userCurrency), userCurrency)} of ${formatCurrencyAmount(convertCurrency(initialBudget.amount, userCurrency), userCurrency)} spent`
-                    : "No budget set"}
-                </CardDescription>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditing(true)}
-                  className="h-6 w-6"
-                >
-                  <Pencil className="h-3 w-3" />
-                </Button>
-              </>
-            )}
+          <p className="font-semibold text-foreground">No monthly budget set</p>
+          <p className="text-sm text-muted-foreground">Set a budget to track your spending habits</p>
+        </div>
+        <Button
+          size="sm"
+          className="rounded-xl"
+          onClick={() => setIsEditing(true)}
+        >
+          {isEditing ? null : "Set Budget"}
+        </Button>
+        {isEditing && (
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={newBudget}
+              onChange={(e) => setNewBudget(e.target.value)}
+              className="w-32 h-9"
+              placeholder="Amount"
+              autoFocus
+              disabled={isLoading}
+            />
+            <Button variant="ghost" size="icon" onClick={handleUpdateBudget} disabled={isLoading}>
+              <Check className="h-4 w-4 text-emerald-600" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleCancel} disabled={isLoading}>
+              <X className="h-4 w-4 text-red-500" />
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm shadow-sm p-6 space-y-5">
+      {/* Header Row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <TrendingUp className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-semibold text-foreground text-sm">Monthly Budget Status</p>
+            <p className="text-xs text-muted-foreground">Default account · {new Date().toLocaleString('default', { month: 'long' })}</p>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-  {initialBudget && (
-    <div className="space-y-3">
-      {percentUsed <= 100 ? (
-        <>
-          <Progress
-            value={percentUsed}
-            extraStyles={
-              percentUsed >= 90
-                ? "bg-red-500"
-                : percentUsed >= 75
-                ? "bg-orange-500"
-                : percentUsed >= 50
-                ? "bg-yellow-500"
-                : "bg-green-500"
-            }
-          />
-          <p className="text-xs text-muted-foreground text-right">
-            {percentUsed.toFixed(1)}% used
-          </p>
-        </>
-      ) : (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600 flex gap-2">
-          <AlertCircle size={20} /> Budget exceeded by{" "}
-          <span className="font-semibold">
-            {(percentUsed - 100).toFixed(1)}%
+
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-bold px-3 py-1 rounded-full ${
+            isOverBudget ? "bg-red-500/10 text-red-600" 
+            : percentUsed >= 75 ? "bg-amber-500/10 text-amber-600"
+            : "bg-emerald-500/10 text-emerald-600"
+          }`}>
+            {percentUsed.toFixed(0)}% Used
           </span>
+          {isEditing ? (
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={newBudget}
+                onChange={(e) => setNewBudget(e.target.value)}
+                className="w-32 h-8 text-sm rounded-lg"
+                placeholder="Enter amount"
+                autoFocus
+                disabled={isLoading}
+              />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUpdateBudget} disabled={isLoading}>
+                <Check className="h-4 w-4 text-emerald-600" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCancel} disabled={isLoading}>
+                <X className="h-4 w-4 text-red-500" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl text-xs font-semibold border-border/60 hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+              onClick={() => setIsEditing(true)}
+            >
+              <Pencil className="h-3 w-3 mr-1.5" />
+              Adjust Budget
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="space-y-2">
+        <div className="h-3 w-full bg-muted/60 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ease-out ${progressColor}`}
+            style={{ width: `${Math.min(percentUsed, 100)}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>
+            Spent: <span className="font-semibold text-foreground">
+              {formatCurrencyAmount(convertCurrency(currentExpenses, userCurrency), userCurrency)}
+            </span>
+          </span>
+          <span>
+            Total Budget: <span className="font-semibold text-foreground">
+              {formatCurrencyAmount(convertCurrency(initialBudget.amount, userCurrency), userCurrency)}
+            </span>
+          </span>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      {isOverBudget ? (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-600 flex items-center gap-2">
+          <AlertCircle size={16} />
+          <span>Budget exceeded by <span className="font-bold">{(percentUsed - 100).toFixed(1)}%</span>. Consider reviewing your expenses.</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40">
+            <p className="text-xs text-muted-foreground font-medium mb-1">Remaining</p>
+            <p className="text-lg font-bold text-emerald-600">
+              {formatCurrencyAmount(convertCurrency(Math.max(0, remaining), userCurrency), userCurrency)}
+            </p>
+          </div>
+          <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40">
+            <p className="text-xs text-muted-foreground font-medium mb-1">Days Left</p>
+            <p className="text-lg font-bold text-primary">{daysLeft} days</p>
+          </div>
         </div>
       )}
     </div>
-  )}
-</CardContent>
-
-    </Card>
   );
 }
