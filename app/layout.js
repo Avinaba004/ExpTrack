@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
+import { PageTransitionLoader } from "@/components/PageTransitionLoader";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <body className={`${inter.className} min-h-screen flex flex-col antialiased bg-[#fcfcfc] dark:bg-zinc-950`}>
+          <PageTransitionLoader />
           <main className="flex-1 flex flex-col">{children}</main>
           <Toaster richColors />
         </body>

@@ -6,7 +6,7 @@ import { Home, Wallet, UploadCloud, TrendingUp, HelpCircle, LogOut, ShieldCheck,
 import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 
-export function Sidebar() {
+export function Sidebar({ mobile = false, onClose }) {
   const pathname = usePathname();
   const { signOut } = useClerk();
 
@@ -34,11 +34,30 @@ export function Sidebar() {
   ];
 
   const isActive = (path) => {
-    return pathname === path || (path !== "/dashboard" && pathname && pathname.startsWith(path));
+    if (path === "/") {
+      return pathname === "/";
+    }
+    return pathname === path || pathname?.startsWith(`${path}/`);
   };
 
+  const wrapperClass = mobile
+    ? "fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-card/95 backdrop-blur-md p-6 shadow-2xl"
+    : "w-64 border-r border-border bg-card/40 backdrop-blur-md h-screen sticky top-0 flex flex-col justify-between p-6 shrink-0";
+
   return (
-    <aside className="w-64 border-r border-border bg-card/40 backdrop-blur-md h-screen sticky top-0 flex flex-col justify-between p-6 shrink-0">
+    <aside className={wrapperClass}>
+      {mobile ? (
+        <div className="mb-4 flex items-center justify-between">
+          <span className="text-sm font-semibold text-foreground">Menu</span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:bg-muted/70"
+          >
+            Close
+          </button>
+        </div>
+      ) : null}
       <div className="space-y-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 px-2 py-1">
@@ -62,6 +81,7 @@ export function Sidebar() {
               <Link
                 key={item.name}
                 href={item.path}
+                onClick={() => mobile && onClose?.()}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   active
                     ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
