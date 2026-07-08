@@ -3,7 +3,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { AssetAllocation } from "../types";
-import { formatCurrencyAmount } from "@/lib/currency";
 
 interface AssetAllocationChartProps {
   allocation: AssetAllocation[];
@@ -24,7 +23,7 @@ export function AssetAllocationChart({ allocation }: AssetAllocationChartProps) 
   if (!allocation || allocation.length === 0) {
     return (
       <Card className="h-full">
-        <CardHeader className="">
+        <CardHeader>
           <CardTitle>Asset Allocation</CardTitle>
           <CardDescription>No data available</CardDescription>
         </CardHeader>
@@ -35,8 +34,15 @@ export function AssetAllocationChart({ allocation }: AssetAllocationChartProps) 
     );
   }
 
-  // Filter out 0% allocations
-  const data = allocation.filter((a) => a.percentage > 0);
+  // Filter out 0% allocations and map the data into the shape Recharts expects.
+  const data = allocation
+    .filter((item) => item.percentage > 0)
+    .map((item) => ({
+      name: item.category,
+      value: item.percentage,
+      amount: item.amount,
+      category: item.category,
+    }));
 
   return (
     <Card className="h-full bg-card/60 backdrop-blur-sm border-border/50 shadow-sm rounded-2xl hover:shadow-lg hover:border-primary/30 transition-all duration-300">
@@ -61,8 +67,8 @@ export function AssetAllocationChart({ allocation }: AssetAllocationChartProps) 
                 innerRadius={55}
                 outerRadius={75}
                 paddingAngle={5}
-                dataKey="percentage"
-                nameKey="category"
+                dataKey="value"
+                nameKey="name"
                 stroke="none"
               >
                 {data.map((entry, index) => (

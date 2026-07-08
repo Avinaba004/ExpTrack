@@ -93,7 +93,7 @@ export function InvestmentDashboard() {
   }
 
   // 4. Main Dashboard
-  if (!data?.metrics || !data?.analysis) return null;
+  if (!data?.metrics) return null;
 
   return (
     <div className="space-y-6">
@@ -146,7 +146,7 @@ export function InvestmentDashboard() {
               <CardDescription>Generated specifically for your financial situation</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <AIExplanationAccordion content={data.analysis} />
+              <AIExplanationAccordion content={data.analysis || ""} />
             </CardContent>
           </Card>
         </div>
