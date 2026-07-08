@@ -4,6 +4,13 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/** @typedef {React.HTMLAttributes<HTMLTableElement> & { className?: string }} TableProps */
+/** @typedef {React.HTMLAttributes<HTMLTableSectionElement> & { className?: string }} TableSectionProps */
+/** @typedef {React.HTMLAttributes<HTMLTableRowElement> & { className?: string }} TableRowProps */
+/** @typedef {React.HTMLAttributes<HTMLTableCellElement> & { className?: string }} TableCellProps */
+/** @typedef {React.HTMLAttributes<HTMLTableCaptionElement> & { className?: string }} TableCaptionProps */
+
+/** @param {TableProps} props */
 function Table({
   className,
   ...props
@@ -18,6 +25,7 @@ function Table({
   );
 }
 
+/** @param {TableSectionProps} props */
 function TableHeader({
   className,
   ...props
@@ -30,6 +38,7 @@ function TableHeader({
   );
 }
 
+/** @param {TableSectionProps} props */
 function TableBody({
   className,
   ...props
@@ -42,6 +51,7 @@ function TableBody({
   );
 }
 
+/** @param {TableSectionProps} props */
 function TableFooter({
   className,
   ...props
@@ -54,6 +64,7 @@ function TableFooter({
   );
 }
 
+/** @param {TableRowProps} props */
 function TableRow({
   className,
   ...props
@@ -69,6 +80,7 @@ function TableRow({
   );
 }
 
+/** @param {TableCellProps} props */
 function TableHead({
   className,
   ...props
@@ -84,6 +96,7 @@ function TableHead({
   );
 }
 
+/** @param {TableCellProps} props */
 function TableCell({
   className,
   ...props
@@ -99,6 +112,7 @@ function TableCell({
   );
 }
 
+/** @param {TableCaptionProps} props */
 function TableCaption({
   className,
   ...props

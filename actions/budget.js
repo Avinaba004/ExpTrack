@@ -79,19 +79,45 @@ export async function updateBudget(amount) {
       throw new Error("User not found");
     }
 
-    const budget = await db.budget.upsert({
+    // Coerce amount to Number and validate
+    const newAmount = typeof amount === "string" ? parseFloat(amount) : Number(amount);
+    if (Number.isNaN(newAmount) || newAmount <= 0) {
+      throw new Error("Invalid budget amount");
+    }
+
+    // Determine current month's expenses so we can clear any active alert when budget is increased above spending
+    const currentDate = new Date();
+    const startOfMonnth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+    const expenses = await db.transaction.aggregate({
       where: {
-        userId: user.id, //find budget
-      },
-      update: {
-        //alredy exist? then update
-        amount,
-      },
-      create: {
-        //do not exist? create!
         userId: user.id,
-        amount,
+        type: "EXPENSE",
+        date: {
+          gte: startOfMonnth,
+          lte: endOfMonth,
+        },
       },
+      _sum: { amount: true },
+    });
+
+    const currentExpenses = expenses._sum.amount ? expenses._sum.amount.toNumber() : 0;
+
+    // Build update payload conditionally to avoid setting fields to undefined
+    const updateData = { amount: newAmount };
+    if (newAmount > currentExpenses) {
+      updateData.isAlertActive = false;
+    }
+
+    const createData = { userId: user.id, amount: newAmount, isAlertActive: newAmount > currentExpenses ? false : false };
+
+    console.log(`[BUDGET] updateBudget: user=${user.id}, newAmount=${newAmount}, currentExpenses=${currentExpenses}, updateData=${JSON.stringify(updateData)}`);
+
+    const budget = await db.budget.upsert({
+      where: { userId: user.id },
+      update: updateData,
+      create: createData,
     });
 
     revalidatePath("/dashboard"); //revalidating dashboard path after updating budget

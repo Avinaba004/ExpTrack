@@ -160,8 +160,10 @@ export interface AnalyzeRequest {
 
 export interface AnalyzeResponse {
   success: boolean;
-  analysis?: InvestmentAnalysis;
+  analysis?: string | null;
   metrics?: FinancialMetrics;
+  insights?: SmartInsight[];
+  allocation?: AssetAllocation[];
   marketData?: MarketData;
   error?: string;
 }
