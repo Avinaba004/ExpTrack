@@ -9,12 +9,13 @@ import {
   TrendingUp,
   HelpCircle,
   LogOut,
+  LogIn,
   ShieldCheck,
   Sparkles,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useClerk } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "./sidebar-context";
 import {
@@ -45,9 +46,8 @@ export function Sidebar({ mobile = false, onClose }) {
 
   const wrapperClass = mobile
     ? "fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-card/95 backdrop-blur-md p-6 shadow-2xl flex flex-col justify-between"
-    : `border-r border-border bg-card/40 backdrop-blur-md h-screen sticky top-0 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out ${
-        isCollapsed ? "w-[72px] p-3" : "w-64 p-6"
-      }`;
+    : `border-r border-border bg-card/40 backdrop-blur-md min-h-screen sticky top-0 left-0 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out ${isCollapsed ? "w-[72px] p-3" : "w-64 p-6"
+    }`;
 
   const NavItem = ({ item }) => {
     const Icon = item.icon;
@@ -60,11 +60,10 @@ export function Sidebar({ mobile = false, onClose }) {
             <TooltipTrigger asChild>
               <Link
                 href={item.path}
-                className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${
-                  active
+                className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${active
                     ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                }`}
+                  }`}
               >
                 <Icon size={20} className={active ? "text-primary" : ""} />
               </Link>
@@ -81,11 +80,10 @@ export function Sidebar({ mobile = false, onClose }) {
       <Link
         href={item.path}
         onClick={() => mobile && onClose?.()}
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-          active
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${active
             ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
             : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-        }`}
+          }`}
       >
         <Icon size={18} className={active ? "text-primary" : ""} />
         <span>{item.name}</span>
@@ -128,12 +126,6 @@ export function Sidebar({ mobile = false, onClose }) {
               </Link>
             )}
 
-            {isCollapsed && (
-              <Link href="/" className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 hover:bg-primary/15 transition-colors">
-                <Sparkles size={18} className="text-primary" />
-              </Link>
-            )}
-
             <button
               type="button"
               onClick={toggle}
@@ -173,21 +165,40 @@ export function Sidebar({ mobile = false, onClose }) {
             </Tooltip>
           </TooltipProvider>
 
-          <TooltipProvider delayDuration={100}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => signOut({ redirectUrl: "/" })}
-                  className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-200"
-                >
-                  <LogOut size={20} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="text-xs font-semibold">
-                Logout
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <SignedIn>
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => signOut({ redirectUrl: "/" })}
+                    className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-200"
+                  >
+                    <LogOut size={20} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="text-xs font-semibold">
+                  Logout
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </SignedIn>
+
+          <SignedOut>
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SignInButton>
+                    <button className="flex items-center justify-center w-12 h-12 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all duration-200">
+                      <LogIn size={20} />
+                    </button>
+                  </SignInButton>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="text-xs font-semibold">
+                  Login
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </SignedOut>
         </div>
       ) : (
         <div className="space-y-6">
@@ -214,13 +225,25 @@ export function Sidebar({ mobile = false, onClose }) {
               <HelpCircle size={18} />
               <span>Help</span>
             </Link>
-            <button
-              onClick={() => signOut({ redirectUrl: "/" })}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-200"
-            >
-              <LogOut size={18} />
-              <span>Logout</span>
-            </button>
+
+            <SignedIn>
+              <button
+                onClick={() => signOut({ redirectUrl: "/" })}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-200"
+              >
+                <LogOut size={18} />
+                <span>Logout</span>
+              </button>
+            </SignedIn>
+
+            <SignedOut>
+              <SignInButton>
+                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all duration-200">
+                  <LogIn size={18} />
+                  <span>Login</span>
+                </button>
+              </SignInButton>
+            </SignedOut>
           </div>
         </div>
       )}

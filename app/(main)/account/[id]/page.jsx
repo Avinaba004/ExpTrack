@@ -6,18 +6,18 @@ import Link from "next/link";
 import TransactionsTable from "../_components/transaction-table";
 import AccountChart from "../_components/account-chart";
 import { AccountBalance } from "../_components/account-balance";
-import { 
-  Home as HomeIcon, 
-  CreditCard, 
-  Utensils, 
-  PiggyBank, 
-  Plus, 
-  FileText, 
-  ArrowLeft, 
-  Sparkles, 
-  TrendingUp, 
-  Bot, 
-  Check, 
+import {
+  Home as HomeIcon,
+  CreditCard,
+  Utensils,
+  PiggyBank,
+  Plus,
+  FileText,
+  ArrowLeft,
+  Sparkles,
+  TrendingUp,
+  Bot,
+  Check,
   ChevronRight,
   ShoppingBag,
   Wrench,
@@ -64,7 +64,7 @@ const AccountsPage = async ({ params, searchParams }) => {
 
   // Budget calculations
   const budgetLimit = budgetData?.budget?.amount ? parseFloat(budgetData.budget.amount) : 30000;
-  const spentAmount = totalSpentThisMonth; 
+  const spentAmount = totalSpentThisMonth;
   const percentUsed = budgetLimit > 0 ? Math.min(Math.round((spentAmount / budgetLimit) * 100), 100) : 0;
   const isOverBudget = spentAmount > budgetLimit;
 
@@ -96,7 +96,7 @@ const AccountsPage = async ({ params, searchParams }) => {
   // Transaction history view
   if (view === "all") {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href={`/account/${id}`}>
@@ -161,8 +161,8 @@ const AccountsPage = async ({ params, searchParams }) => {
             </div>
 
             <div className="h-2.5 w-full bg-muted/60 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-500 ${isOverBudget ? "bg-red-500" : "bg-primary"}`} 
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${isOverBudget ? "bg-red-500" : "bg-primary"}`}
                 style={{ width: `${percentUsed}%` }}
               />
             </div>
