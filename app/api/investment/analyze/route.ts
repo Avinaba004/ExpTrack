@@ -142,6 +142,27 @@ ${targetAllocationText}
 *(Note: Structured fallback generated due to temporary AI service rate limits)*`;
     }
 
+    await db.investmentProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        riskProfile,
+        metrics,
+        insights,
+        allocation,
+        marketData,
+        analysis: aiAnalysis,
+      },
+      update: {
+        riskProfile,
+        metrics,
+        insights,
+        allocation,
+        marketData,
+        analysis: aiAnalysis,
+      },
+    });
+
     return NextResponse.json({
       success: true,
       metrics,

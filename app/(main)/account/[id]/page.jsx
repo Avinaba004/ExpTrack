@@ -66,6 +66,7 @@ const AccountsPage = async ({ params, searchParams }) => {
   const budgetLimit = budgetData?.budget?.amount ? parseFloat(budgetData.budget.amount) : 30000;
   const spentAmount = totalSpentThisMonth; 
   const percentUsed = budgetLimit > 0 ? Math.min(Math.round((spentAmount / budgetLimit) * 100), 100) : 0;
+  const isOverBudget = spentAmount > budgetLimit;
 
   // Real database metrics for UI tiles
   const displayFixedCosts = fixedCosts;
@@ -111,13 +112,13 @@ const AccountsPage = async ({ params, searchParams }) => {
         </div>
 
         <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm shadow-sm overflow-hidden">
-          <Suspense fallback={<div className="h-[300px] w-full animate-pulse bg-muted/20" />}>
+          <Suspense fallback={<div className="h-[300px] w-full bg-muted/20 animate-pulse" />}>
             <AccountChart transactions={transactions} />
           </Suspense>
         </div>
 
         <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm shadow-sm overflow-hidden">
-          <Suspense fallback={<div className="h-64 w-full animate-pulse bg-muted/20" />}>
+          <Suspense fallback={<div className="h-64 w-full bg-muted/20 animate-pulse" />}>
             <TransactionsTable transactions={transactions} />
           </Suspense>
         </div>
@@ -154,14 +155,14 @@ const AccountsPage = async ({ params, searchParams }) => {
                   Spent: <span className="font-semibold text-foreground">₹{spentAmount.toLocaleString("en-IN")}</span> of ₹{budgetLimit.toLocaleString("en-IN")} limit
                 </p>
               </div>
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${isOverBudget ? "bg-red-500/10 text-red-600 border border-red-500/20" : "bg-primary/10 text-primary border border-primary/20"}`}>
                 {percentUsed}% Used
               </span>
             </div>
 
             <div className="h-2.5 w-full bg-muted/60 rounded-full overflow-hidden">
               <div 
-                className="h-full rounded-full bg-primary transition-all duration-500" 
+                className={`h-full rounded-full transition-all duration-500 ${isOverBudget ? "bg-red-500" : "bg-primary"}`} 
                 style={{ width: `${percentUsed}%` }}
               />
             </div>

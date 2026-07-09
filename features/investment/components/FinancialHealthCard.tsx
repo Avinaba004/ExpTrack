@@ -29,17 +29,17 @@ export function FinancialHealthCard({ score, savingsRate, budgetEfficiency }: Fi
   }
 
   return (
-    <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full bg-card/60 backdrop-blur-sm border-border/50 rounded-2xl overflow-hidden">
+    <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full flex flex-col bg-card/60 backdrop-blur-sm border-border/50 rounded-2xl overflow-hidden">
       <CardHeader className="pb-4 bg-primary/5 border-b border-border/40">
-        <CardTitle className="text-lg flex items-center justify-between font-semibold">
-          Financial Health
+        <CardTitle className="text-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-semibold">
+          <span className="break-words">Financial Health</span>
           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${bg} ${color} border border-current/10`}>
             {status}
           </span>
         </CardTitle>
         <CardDescription>Based on your recent transaction history</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col justify-between pt-6">
         <div className="flex flex-col items-center justify-center py-4">
           <div className="relative w-32 h-32 flex items-center justify-center">
             {/* Background circle */}
@@ -72,10 +72,10 @@ export function FinancialHealthCard({ score, savingsRate, budgetEfficiency }: Fi
           </div>
         </div>
 
-        <div className="space-y-4 mt-2">
+        <div className="space-y-4 mt-2 max-w-full">
           <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground flex items-center gap-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm">
+              <span className="text-muted-foreground flex items-center gap-1 break-words">
                 <TrendingUp size={14} /> Savings Rate
               </span>
               <span className="font-medium">{savingsRate}%</span>
@@ -84,8 +84,8 @@ export function FinancialHealthCard({ score, savingsRate, budgetEfficiency }: Fi
           </div>
 
           <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground flex items-center gap-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm">
+              <span className="text-muted-foreground flex items-center gap-1 break-words">
                 <CheckCircle2 size={14} /> Budget Efficiency
               </span>
               <span className="font-medium">{budgetEfficiency}%</span>

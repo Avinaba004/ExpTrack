@@ -2,15 +2,7 @@
 
 import { endOfDay, format, startOfDay, subDays } from "date-fns";
 import React, { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import ReactECharts from "echarts-for-react";
 import {
   Select,
   SelectContent,
@@ -26,28 +18,6 @@ const DATE_RANGES = {
   "3M": { label: "Last 3 Months", days: 90 },
   "6M": { label: "Last 6 Months", days: 180 },
   ALL: { label: "All Time", days: null },
-};
-
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-popover border border-border rounded-xl px-4 py-3 shadow-lg text-sm space-y-1">
-        <p className="font-semibold text-foreground mb-2">{label}</p>
-        {payload.map((entry) => (
-          <div key={entry.name} className="flex items-center justify-between gap-6">
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <span className="h-2 w-2 rounded-full inline-block" style={{ backgroundColor: entry.fill }} />
-              {entry.name}
-            </span>
-            <span className="font-semibold" style={{ color: entry.fill }}>
-              ₹{Number(entry.value).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return null;
 };
 
 const AccountChart = ({ transactions }) => {
@@ -91,6 +61,66 @@ const AccountChart = ({ transactions }) => {
       { income: 0, expense: 0 }
     );
   }, [filteredData]);
+
+  const chartOption = useMemo(() => ({
+    tooltip: {
+      trigger: "item",
+      formatter: (params) => {
+        return `<div style="font-size:12px;line-height:1.5"><strong>${params.seriesName}</strong><br/>${params.name}: ₹${Number(params.value).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>`;
+      },
+    },
+    legend: {
+      data: ["Income", "Expense"],
+      textStyle: { color: "hsl(var(--muted-foreground))" },
+    },
+    grid: {
+      left: "3%",
+      right: "3%",
+      top: "10%",
+      bottom: "12%",
+      containLabel: true,
+    },
+    xAxis: {
+      type: "category",
+      data: filteredData.map((item) => item.date),
+      axisLabel: { color: "hsl(var(--muted-foreground))", fontSize: 11 },
+      axisLine: { show: true, lineStyle: { color: "hsl(var(--border))", width: 1 } },
+      axisTick: { show: false },
+    },
+    yAxis: {
+      type: "value",
+      axisLabel: {
+        color: "hsl(var(--muted-foreground))",
+        fontSize: 11,
+        formatter: (value) => `₹${value}`,
+      },
+      axisLine: { show: true, lineStyle: { color: "hsl(var(--border))", width: 1 } },
+      axisTick: { show: false },
+      splitLine: { show: false },
+    },
+    series: [
+      {
+        name: "Income",
+        type: "bar",
+        data: filteredData.map((item) => item.income),
+        barWidth: "36%",
+        itemStyle: { color: "#16a34a", borderRadius: [6, 6, 0, 0] },
+        emphasis: {
+          itemStyle: { color: "rgba(22, 163, 74, 0.65)" },
+        },
+      },
+      {
+        name: "Expense",
+        type: "bar",
+        data: filteredData.map((item) => item.expense),
+        barWidth: "36%",
+        itemStyle: { color: "#ef4444", borderRadius: [6, 6, 0, 0] },
+        emphasis: {
+          itemStyle: { color: "rgba(239, 68, 68, 0.65)" },
+        },
+      },
+    ],
+  }), [filteredData]);
 
   return (
     <div className="p-6 space-y-6">
@@ -145,33 +175,8 @@ const AccountChart = ({ transactions }) => {
       </div>
 
       {/* Bar Chart */}
-      <div className="h-[280px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={filteredData}
-            margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
-            barCategoryGap="30%"
-          >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
-            <XAxis
-              dataKey="date"
-              fontSize={11}
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))" }}
-            />
-            <YAxis
-              fontSize={11}
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: "hsl(var(--muted-foreground))" }}
-              tickFormatter={(value) => `₹${value}`}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
-            <Bar dataKey="income" name="Income" fill="oklch(0.55 0.15 150)" radius={[6, 6, 0, 0]} />
-            <Bar dataKey="expense" name="Expense" fill="oklch(0.6 0.15 20)" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="h-[280px] w-full">
+        <ReactECharts option={chartOption} style={{ height: "100%", width: "100%" }} />
       </div>
     </div>
   );

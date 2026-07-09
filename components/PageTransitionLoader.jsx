@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 
-export function PageTransitionLoader() {
+export function PageTransitionLoader({ showOnMount = false }) {
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(showOnMount);
   const initialMount = useRef(true);
 
   useEffect(() => {
+    if (showOnMount) return;
     if (!pathname) return;
     if (initialMount.current) {
       initialMount.current = false;
@@ -19,7 +20,7 @@ export function PageTransitionLoader() {
     setIsLoading(true);
     const timeout = window.setTimeout(() => setIsLoading(false), 450);
     return () => window.clearTimeout(timeout);
-  }, [pathname]);
+  }, [pathname, showOnMount]);
 
   return (
     <AnimatePresence mode="wait">

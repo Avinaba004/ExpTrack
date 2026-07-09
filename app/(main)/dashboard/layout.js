@@ -1,11 +1,9 @@
 import React, { Suspense } from "react";
-import { BarLoader } from "react-spinners";
+import { AccountsLoader } from "@/components/accounts-loader";
 
 const DashboardLayout = ({ children }) => {
   return (
-    <Suspense
-      fallback={<BarLoader className="mt-4" width={"100%"} color="#9333ea" />}
-    >
+    <Suspense fallback={<AccountsLoader />}>
       {children}
     </Suspense>
   );

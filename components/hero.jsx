@@ -42,7 +42,7 @@ export default function HeroSection() {
             Premium planning for modern money habits
           </div>
 
-          <h1 className="mt-8 text-2xl font-semibold tracking-tight sm:text-2xl lg:text-6xl">
+          <h1 className="mt-8 text-2xl font-semibold tracking-tight leading-tight text-slate-950 dark:text-white sm:text-2xl lg:text-6xl">
             A finance workspace that turns every spend into a smarter decision.
           </h1>
 
@@ -173,7 +173,7 @@ export default function HeroSection() {
         </div>
       </motion.section>
 
-      <motion.section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24" {...reveal}>
+      <motion.section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24" style={{ position: "relative" }} {...reveal}>
         <SectionHeading
           eyebrow="Core experience"
           title="A focused finance hub built for fast decisions."
@@ -187,7 +187,7 @@ export default function HeroSection() {
         </div>
       </motion.section>
 
-      <motion.section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-16" {...reveal}>
+      <motion.section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-16" style={{ position: "relative" }} {...reveal}>
         <div className="grid gap-8 rounded-[36px] border border-white/10 bg-gradient-to-br from-background/80 to-primary/5 p-8 shadow-[0_24px_90px_-40px_rgba(91,33,182,0.6)] backdrop-blur-xl lg:grid-cols-[0.95fr_1.05fr] lg:p-10">
           <div>
             <SectionHeading
@@ -246,7 +246,7 @@ export default function HeroSection() {
         </div>
       </motion.section>
 
-      <motion.section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" {...reveal}>
+      <motion.section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" style={{ position: "relative" }} {...reveal}>
         <SectionHeading
           eyebrow="Trusted by thoughtful users"
           title="People use ExpTrack to make steady progress without the noise."
@@ -269,7 +269,7 @@ export default function HeroSection() {
         </div>
       </motion.section>
 
-      <motion.section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" {...reveal}>
+      <motion.section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" style={{ position: "relative" }}  {...reveal}>
         <SectionHeading
           eyebrow="Pricing"
           title="Choose the rhythm that fits how you manage money."

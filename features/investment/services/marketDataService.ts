@@ -38,41 +38,78 @@ async function fetchYahooFinance(): Promise<{ indices: MarketIndex[] }> {
   if (cached) return cached;
 
   const apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) {
-    console.warn("[MarketData] RAPIDAPI_KEY not set, skipping Yahoo Finance");
-    return { indices: [] };
-  }
+  const symbols = ["^NSEI", "^BSESN"];
+  const indices: MarketIndex[] = [];
 
   try {
-    // Fetch NIFTY 50 and SENSEX
-    const symbols = ["^NSEI", "^BSESN"];
-    const indices: MarketIndex[] = [];
-
     for (const symbol of symbols) {
-      const res = await fetch(
-        `https://apidojo-yahoo-finance-v1.p.rapidapi.com/market/v2/get-quotes?region=IN&symbols=${symbol}`,
-        {
-          headers: {
-            "x-rapidapi-key": apiKey,
-            "x-rapidapi-host": "apidojo-yahoo-finance-v1.p.rapidapi.com",
-          },
-          next: { revalidate: 300 },
+      let quote: MarketIndex | null = null;
+
+      if (apiKey) {
+        try {
+          const res = await fetch(
+            `https://apidojo-yahoo-finance-v1.p.rapidapi.com/market/v2/get-quotes?region=IN&symbols=${symbol}`,
+            {
+              headers: {
+                "x-rapidapi-key": apiKey,
+                "x-rapidapi-host": "apidojo-yahoo-finance-v1.p.rapidapi.com",
+              },
+              next: { revalidate: 300 },
+            }
+          );
+
+          if (res.ok) {
+            const data = await res.json();
+            const rapidQuote = data?.quoteResponse?.result?.[0];
+            if (rapidQuote) {
+              quote = {
+                name: rapidQuote.shortName || symbol,
+                symbol,
+                value: rapidQuote.regularMarketPrice || 0,
+                change: rapidQuote.regularMarketChange || 0,
+                changePercent: rapidQuote.regularMarketChangePercent || 0,
+                lastUpdated: new Date().toISOString(),
+              };
+            }
+          }
+        } catch (err) {
+          console.warn("[MarketData] RapidAPI Yahoo request failed, trying public fallback:", err);
         }
-      );
+      }
 
-      if (!res.ok) continue;
+      if (!quote) {
+        try {
+          const res = await fetch(
+            `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`
+          );
 
-      const data = await res.json();
-      const quote = data?.quoteResponse?.result?.[0];
+          if (!res.ok) continue;
+
+          const data = await res.json();
+          const chart = data?.chart?.result?.[0];
+          const meta = chart?.meta;
+          const price = Number(meta?.regularMarketPrice ?? chart?.indicators?.quote?.[0]?.close?.slice(-1)[0] ?? 0);
+          const previousClose = Number(meta?.chartPreviousClose ?? chart?.indicators?.quote?.[0]?.close?.slice(-2, -1)[0] ?? price);
+          const change = price - previousClose;
+          const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
+
+          if (price > 0) {
+            quote = {
+              name: meta?.shortName || symbol,
+              symbol,
+              value: price,
+              change,
+              changePercent,
+              lastUpdated: new Date().toISOString(),
+            };
+          }
+        } catch (err) {
+          console.warn("[MarketData] Public Yahoo fallback failed:", err);
+        }
+      }
+
       if (quote) {
-        indices.push({
-          name: quote.shortName || symbol,
-          symbol: symbol,
-          value: quote.regularMarketPrice || 0,
-          change: quote.regularMarketChange || 0,
-          changePercent: quote.regularMarketChangePercent || 0,
-          lastUpdated: new Date().toISOString(),
-        });
+        indices.push(quote);
       }
     }
 
