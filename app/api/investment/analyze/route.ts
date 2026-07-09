@@ -7,6 +7,7 @@ import { generateAssetAllocation } from "@/features/investment/services/assetAll
 import { buildInvestmentSystemPrompt } from "@/features/investment/services/promptBuilder";
 import { fetchAllMarketData } from "@/features/investment/services/marketDataService";
 import type { RiskProfile, WhatIfScenario } from "@/features/investment/types";
+import { getAvailableInvestmentProfileColumns } from "../investmentProfileSchema";
 
 export async function POST(request: NextRequest) {
   try {
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
       aiAnalysis = response.text();
     } catch (apiError) {
       console.warn("Investment analysis Gemini call failed, returning structured fallback:", apiError);
-      
+
       const targetAllocationText = allocation.map(a => `- **${a.category}**: ${a.percentage}% (₹${a.amount.toLocaleString("en-IN")}/mo)`).join("\n");
 
       aiAnalysis = `### Executive Summary
@@ -142,11 +143,42 @@ ${targetAllocationText}
 *(Note: Structured fallback generated due to temporary AI service rate limits)*`;
     }
 
+    const profileData: Record<string, any> = { riskProfile };
+    const availableColumns = await getAvailableInvestmentProfileColumns();
+
+    if (availableColumns.has("age") && riskProfile) {
+      profileData.age = riskProfile.age;
+    }
+    if (availableColumns.has("riskTolerance") && riskProfile) {
+      profileData.riskTolerance = riskProfile.riskTolerance;
+    }
+    if (availableColumns.has("investmentHorizon") && riskProfile) {
+      profileData.investmentHorizon = riskProfile.investmentHorizon;
+    }
+    if (availableColumns.has("experience") && riskProfile) {
+      profileData.experience = riskProfile.experience;
+    }
+    if (availableColumns.has("monthlyInvestmentBudget") && riskProfile) {
+      profileData.monthlyInvestmentBudget = riskProfile.monthlyInvestmentBudget;
+    }
+    if (availableColumns.has("monthlyIncome") && riskProfile) {
+      profileData.monthlyIncome = riskProfile.monthlyIncome;
+    }
+    if (availableColumns.has("monthlyExpenses") && riskProfile) {
+      profileData.monthlyExpenses = riskProfile.monthlyExpenses;
+    }
+    if (availableColumns.has("financialGoals") && riskProfile) {
+      profileData.financialGoals = riskProfile.financialGoals;
+    }
+    if (availableColumns.has("completedAt") && riskProfile) {
+      profileData.completedAt = riskProfile.completedAt ? new Date(riskProfile.completedAt) : null;
+    }
+
     await db.investmentProfile.upsert({
       where: { userId: user.id },
       create: {
         userId: user.id,
-        riskProfile,
+        ...profileData,
         metrics,
         insights,
         allocation,
@@ -154,7 +186,7 @@ ${targetAllocationText}
         analysis: aiAnalysis,
       },
       update: {
-        riskProfile,
+        ...profileData,
         metrics,
         insights,
         allocation,

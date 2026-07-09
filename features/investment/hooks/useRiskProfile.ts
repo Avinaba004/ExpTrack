@@ -2,39 +2,57 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import type { RiskProfile } from "../types";
-
-const STORAGE_KEY = "exptrack_risk_profile";
+import type { RiskProfile, AnalyzeResponse } from "../types";
 
 export function useRiskProfile() {
   const { user, isLoaded } = useUser();
   const [profile, setProfile] = useState<RiskProfile | null>(null);
+  const [storedAnalysis, setStoredAnalysis] = useState<AnalyzeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load from localStorage on mount
   useEffect(() => {
     if (!isLoaded) return;
 
     if (!user) {
       setProfile(null);
+      setStoredAnalysis(null);
       setIsLoading(false);
       return;
     }
 
-    try {
-      const stored = localStorage.getItem(`${STORAGE_KEY}_${user.id}`);
-      if (stored) {
-        setProfile(JSON.parse(stored));
+    let isMounted = true;
+
+    async function loadProfile() {
+      try {
+        const response = await fetch("/api/investment/profile");
+        if (!response.ok) {
+          throw new Error("Failed to load investment profile");
+        }
+
+        const result = await response.json();
+        if (!isMounted) return;
+
+        if (result.success) {
+          setProfile(result.profile ?? null);
+          setStoredAnalysis(result.storedAnalysis ?? null);
+        }
+      } catch (error) {
+        console.error("Failed to load investment profile:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("Failed to load risk profile:", error);
-    } finally {
-      setIsLoading(false);
     }
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, isLoaded]);
 
-  // Save to localStorage
-  const saveProfile = (newProfile: Omit<RiskProfile, "completedAt">) => {
+  const saveProfile = async (newProfile: Omit<RiskProfile, "completedAt">) => {
     if (!user) return false;
 
     const fullProfile: RiskProfile = {
@@ -43,11 +61,20 @@ export function useRiskProfile() {
     };
 
     try {
-      localStorage.setItem(
-        `${STORAGE_KEY}_${user.id}`,
-        JSON.stringify(fullProfile)
-      );
-      setProfile(fullProfile);
+      const response = await fetch("/api/investment/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ riskProfile: fullProfile }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json();
+        throw new Error(errorPayload.error || "Failed to save investment profile");
+      }
+
+      const result = await response.json();
+      setProfile(result.profile ?? fullProfile);
+      setStoredAnalysis(null);
       return true;
     } catch (error) {
       console.error("Failed to save risk profile:", error);
@@ -56,17 +83,13 @@ export function useRiskProfile() {
   };
 
   const clearProfile = () => {
-    if (!user) return;
-    try {
-      localStorage.removeItem(`${STORAGE_KEY}_${user.id}`);
-      setProfile(null);
-    } catch (error) {
-      console.error("Failed to clear risk profile:", error);
-    }
+    setProfile(null);
+    setStoredAnalysis(null);
   };
 
   return {
     profile,
+    storedAnalysis,
     isLoading,
     saveProfile,
     clearProfile,
