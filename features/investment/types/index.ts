@@ -14,6 +14,8 @@ export interface RiskProfile {
   investmentHorizon: InvestmentHorizon;
   experience: InvestmentExperience;
   monthlyInvestmentBudget: number; // INR
+  monthlyIncome: number; // INR
+  monthlyExpenses: number; // INR
   financialGoals: string[];
   completedAt: string; // ISO date
 }

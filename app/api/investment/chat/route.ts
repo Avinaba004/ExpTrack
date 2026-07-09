@@ -133,11 +133,24 @@ export async function POST(request: NextRequest) {
       systemInstruction: systemPrompt,
     });
 
-    // Build chat history (convert "assistant" role to "model" for Gemini)
-    const geminiHistory = history.slice(-10).map((h) => ({
-      role: h.role === "user" ? "user" as const : "model" as const,
-      parts: [{ text: h.content }],
-    }));
+    // Build chat history in a Gemini-safe format. The first message must be from the user.
+    const geminiHistory = history
+      .filter((h): h is { role: "user" | "model"; content: string } => Boolean(h?.content?.trim()))
+      .slice(-10)
+      .reduce<Array<{ role: "user" | "model"; parts: Array<{ text: string }> }>>((acc, h) => {
+        const normalizedRole = h.role === "user" ? "user" : "model";
+
+        if (acc.length === 0 && normalizedRole !== "user") {
+          return acc;
+        }
+
+        acc.push({
+          role: normalizedRole,
+          parts: [{ text: h.content }],
+        });
+
+        return acc;
+      }, []);
 
     let answer = "";
     try {
@@ -146,15 +159,23 @@ export async function POST(request: NextRequest) {
       const response = await result.response;
       answer = response.text();
     } catch (apiError) {
-      console.warn("Investment chat Gemini call failed, returning fallback:", apiError);
-      answer = `*(Running in local fallback mode because the Gemini API free-tier daily quota of 20 requests has been exceeded)*
-      
-Hello! Although the Google Gemini API is currently rate-limited, I can still analyze your finances locally using your data:
+      const errorMessage = apiError instanceof Error ? apiError.message : "Unknown AI service error";
+      const isRateLimitError = /(429|quota|rate limit|rate-limit|too many requests|resource exhausted|daily quota)/i.test(errorMessage);
 
-* **Risk Tolerance Profile**: **${riskProfile?.riskTolerance || "Moderate"}**
-* **Monthly Savings Capacity**: **₹${metrics.monthlySavings.toLocaleString("en-IN")}**
-* **Target Allocations**: We recommend allocating to Equities (${allocation[0]?.percentage || 45}%) and Debt (${allocation[1]?.percentage || 25}%).
-* Please try again shortly once your Google Gemini quota resets!`;
+      console.warn("Investment chat Gemini call failed, using fallback:", apiError);
+
+      const riskLabel = riskProfile?.riskTolerance || "Moderate";
+      const monthlySavings = metrics.monthlySavings.toLocaleString("en-IN");
+      const equityPct = allocation[0]?.percentage || 45;
+      const debtPct = allocation[1]?.percentage || 25;
+
+      answer = `I’m having trouble reaching the Gemini AI service right now${isRateLimitError ? " because the API is rate-limiting requests" : ""} (${errorMessage}). I can still give you a grounded summary from your financial data:
+
+• Risk profile: ${riskLabel}
+• Monthly savings capacity: ₹${monthlySavings}
+• Suggested allocation: Equities ${equityPct}% and Debt ${debtPct}%
+
+If you want, try again in a moment or ask about a specific account, budget, or recent transactions.`;
     }
 
     return NextResponse.json({

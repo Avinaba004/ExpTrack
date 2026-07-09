@@ -15,17 +15,18 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  clerkUserId   String    @unique // clerk user id
-  email         String    @unique
-  name          String?
-  imageUrl      String?
-  currency      String    @default("INR") // User's preferred currency
-  transactions  Transaction[]
-  accounts      Account[]
-  budgets       Budget[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                 String               @id @default(uuid())
+  clerkUserId        String               @unique // clerk user id
+  email              String               @unique
+  name               String?
+  imageUrl           String?
+  currency           String               @default("INR") // User's preferred currency
+  transactions       Transaction[]
+  accounts           Account[]
+  budgets            Budget[]
+  investmentProfiles InvestmentProfile[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
 
   @@map("users")
 }
@@ -73,17 +74,34 @@ model Transaction {
 
 
 model Budget {
-  id          String       @id @default(uuid())
-  amount      Decimal
-  lastAlertSent DateTime?  // Track when the last alert was sent
-  isAlertActive Boolean    @default(false) // Whether an over-budget alert is currently active
-  userId      String       @unique
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id            String    @id @default(uuid())
+  amount        Decimal
+  lastAlertSent DateTime? // Track when the last alert was sent
+  isAlertActive Boolean   @default(false) // Whether an over-budget alert is currently active
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([userId])
   @@map("budgets")
+}
+
+model InvestmentProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  riskProfile  Json?
+  metrics      Json?
+  insights     Json?
+  allocation   Json?
+  marketData   Json?
+  analysis     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@map("investment_profiles")
 }
 
 enum TransactionType {

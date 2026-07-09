@@ -1,6 +1,7 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import ReactECharts from "echarts-for-react";
+import type { EChartsOption } from "echarts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { AssetAllocation } from "../types";
 
@@ -44,47 +45,81 @@ export function AssetAllocationChart({ allocation }: AssetAllocationChartProps) 
       category: item.category,
     }));
 
+  const option: EChartsOption = {
+    color: COLORS,
+    tooltip: {
+      trigger: "item",
+      formatter: (params: any) => {
+        const amount = params.data?.amount ?? 0;
+        return `${params.name}: ${params.value}%<br/>₹${Number(amount).toLocaleString("en-IN")}/mo`;
+      },
+    },
+    legend: {
+      show: false,
+    },
+    series: [
+      {
+        name: "Allocation",
+        type: "pie",
+        radius: ["55%", "75%"],
+        center: ["50%", "50%"],
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderRadius: 6,
+          borderColor: "hsl(var(--border))",
+          borderWidth: 1.5,
+        },
+        label: {
+          show: false,
+        },
+        labelLine: {
+          show: false,
+        },
+        data: data.map((entry, index) => ({
+          name: entry.name,
+          value: entry.value,
+          amount: entry.amount,
+          itemStyle: {
+            color: COLORS[index % COLORS.length],
+          },
+        })),
+      },
+    ],
+  };
+
   return (
-    <Card className="h-full bg-card/60 backdrop-blur-sm border-border/50 shadow-sm rounded-2xl hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+    <Card className="flex flex-col h-full bg-card/60 backdrop-blur-sm border-border/50 shadow-sm rounded-2xl hover:shadow-lg hover:border-primary/30 transition-all duration-300">
       <CardHeader className="pb-4 bg-primary/5 border-b border-border/40">
         <CardTitle className="text-lg">Recommended Portfolio</CardTitle>
         <CardDescription>Based on your profile and capacity</CardDescription>
       </CardHeader>
-      <CardContent className="pt-6">
-        <div className="h-[250px] w-full relative">
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <CardContent className="flex-1 flex flex-col justify-between pt-6 min-h-[300px]">
+        <div className="relative h-[180px] w-full shrink-0">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <span className="block text-2xl font-bold text-foreground">100%</span>
               <span className="block text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Allocated</span>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="45%"
-                innerRadius={55}
-                outerRadius={75}
-                paddingAngle={5}
-                dataKey="value"
-                nameKey="name"
-                stroke="none"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="drop-shadow-sm hover:opacity-85 transition-opacity outline-none" />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number, name: string, props: any) => [
-                  `${value}% (₹${props.payload.amount.toLocaleString("en-IN")}/mo)`,
-                  name,
-                ]}
-                contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)", padding: "8px 12px" }}
+          <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
+        </div>
+        <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-4 text-[11px]">
+          {data.map((entry, index) => (
+            <div key={entry.name} className="flex items-start gap-1.5 min-w-0">
+              <span 
+                className="h-2 w-2 rounded-full shrink-0 mt-0.5" 
+                style={{ backgroundColor: COLORS[index % COLORS.length] }}
               />
-              <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '10px', paddingTop: '15px' }} />
-            </PieChart>
-          </ResponsiveContainer>
+              <span className="flex-1 min-w-0">
+                <span className="text-muted-foreground font-medium break-words leading-tight block">
+                  {entry.name}
+                </span>
+              </span>
+              <span className="font-semibold text-foreground shrink-0 ml-1">
+                {entry.value}%
+              </span>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

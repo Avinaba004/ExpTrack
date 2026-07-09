@@ -10,11 +10,12 @@ import type { RiskProfile, RiskTolerance, InvestmentHorizon, InvestmentExperienc
 interface Props {
   onComplete: (profile: Omit<RiskProfile, "completedAt">) => void;
   onCancel?: () => void;
+  initialProfile?: Partial<RiskProfile>;
 }
 
-export function RiskProfileQuestionnaire({ onComplete, onCancel }: Props) {
+export function RiskProfileQuestionnaire({ onComplete, onCancel, initialProfile }: Props) {
   const [step, setStep] = useState(1);
-  const [profile, setProfile] = useState<Partial<RiskProfile>>({});
+  const [profile, setProfile] = useState<Partial<RiskProfile>>(initialProfile ?? {});
 
   const handleNext = () => setStep((s) => s + 1);
   const handleBack = () => setStep((s) => s - 1);
@@ -33,6 +34,8 @@ export function RiskProfileQuestionnaire({ onComplete, onCancel }: Props) {
         investmentHorizon: profile.investmentHorizon,
         experience: profile.experience,
         monthlyInvestmentBudget: Number(profile.monthlyInvestmentBudget),
+        monthlyIncome: Number(profile.monthlyIncome || 0),
+        monthlyExpenses: Number(profile.monthlyExpenses || 0),
         financialGoals: profile.financialGoals || [],
       });
     }
@@ -67,7 +70,27 @@ export function RiskProfileQuestionnaire({ onComplete, onCancel }: Props) {
                 value={profile.monthlyInvestmentBudget || ""}
                 onChange={(e) => setProfile({ ...profile, monthlyInvestmentBudget: Number(e.target.value) })}
               />
-              <p className="text-xs text-muted-foreground">You can change this later.</p>
+              <p className="text-xs text-muted-foreground">You can change this later through the investment profile section.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Estimated Monthly Income (₹)</label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 50000"
+                  value={profile.monthlyIncome || ""}
+                  onChange={(e) => setProfile({ ...profile, monthlyIncome: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Estimated Monthly Expenses (₹)</label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 20000"
+                  value={profile.monthlyExpenses || ""}
+                  onChange={(e) => setProfile({ ...profile, monthlyExpenses: Number(e.target.value) })}
+                />
+              </div>
             </div>
           </div>
         )}

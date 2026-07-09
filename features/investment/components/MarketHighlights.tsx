@@ -40,7 +40,7 @@ export function MarketHighlights() {
   }
 
   return (
-    <Card className="h-full bg-card/60 backdrop-blur-sm border-border/50 shadow-sm rounded-2xl hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+    <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-sm rounded-2xl hover:shadow-lg hover:border-primary/30 transition-all duration-300">
       <CardHeader className="pb-3 border-b border-border/40 bg-primary/5 p-4">
         <CardTitle className="flex items-center gap-2 text-base font-semibold">
           <Activity className="h-4.5 w-4.5 text-primary" />
