@@ -88,17 +88,26 @@ model Budget {
 }
 
 model InvestmentProfile {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  riskProfile  Json?
-  metrics      Json?
-  insights     Json?
-  allocation   Json?
-  marketData   Json?
-  analysis     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                       String   @id @default(uuid())
+  userId                   String   @unique
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  riskProfile              Json?
+  age                      Int?
+  riskTolerance            String?
+  investmentHorizon        String?
+  experience               String?
+  monthlyInvestmentBudget  Int?
+  monthlyIncome            Int?
+  monthlyExpenses          Int?
+  financialGoals           Json?
+  completedAt              DateTime?
+  metrics                  Json?
+  insights                 Json?
+  allocation               Json?
+  marketData               Json?
+  analysis                 String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   @@index([userId])
   @@map("investment_profiles")

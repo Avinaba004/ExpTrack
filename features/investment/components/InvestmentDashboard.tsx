@@ -19,24 +19,25 @@ import type { WhatIfScenario, RiskProfile } from "../types";
 
 export function InvestmentDashboard() {
   const { isLoaded } = useUser();
-  const { profile, hasProfile, isLoading: isProfileLoading, saveProfile } = useRiskProfile();
-  const { data, isLoading: isAnalysisLoading, error, fetchAnalysis } = useInvestmentAnalysis();
+  const { profile, hasProfile, isLoading: isProfileLoading, saveProfile, storedAnalysis } = useRiskProfile();
+  const { data, isLoading: isAnalysisLoading, error, fetchAnalysis } = useInvestmentAnalysis(storedAnalysis);
   const [editingProfile, setEditingProfile] = useState(false);
 
-  useEffect(() => {
-    if (isLoaded && !isProfileLoading && hasProfile) {
-      fetchAnalysis(profile, null);
-    }
-  }, [isLoaded, isProfileLoading, hasProfile, profile, fetchAnalysis]);
-
-  const handleProfileSave = (newProfile: Omit<RiskProfile, "completedAt">) => {
-    saveProfile(newProfile);
+  const handleProfileSave = async (newProfile: Omit<RiskProfile, "completedAt">) => {
+    const saved = await saveProfile(newProfile);
     setEditingProfile(false);
+    if (saved) {
+      fetchAnalysis({ ...newProfile, completedAt: new Date().toISOString() }, null);
+    }
   };
 
-  const handleSaveProfileValues = (values: { monthlyIncome: number; monthlyExpenses: number }) => {
+  const handleSaveProfileValues = async (values: { monthlyIncome: number; monthlyExpenses: number }) => {
     if (!profile) return;
-    saveProfile({ ...profile, monthlyIncome: values.monthlyIncome, monthlyExpenses: values.monthlyExpenses });
+    const updatedProfile = { ...profile, monthlyIncome: values.monthlyIncome, monthlyExpenses: values.monthlyExpenses };
+    const saved = await saveProfile(updatedProfile);
+    if (saved) {
+      fetchAnalysis(updatedProfile, null);
+    }
   };
 
   const handleSimulate = (scenario: WhatIfScenario | null) => {
@@ -96,9 +97,51 @@ export function InvestmentDashboard() {
       <div className="py-10 max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2 text-foreground">Welcome to your AI Investment Planner</h1>
-          <p className="text-muted-foreground text-sm">Let's start by understanding your financial goals and risk tolerance.</p>
+          <p className="text-muted-foreground text-sm">Let&apos;s start by understanding your financial goals and risk tolerance.</p>
         </div>
         <RiskProfileQuestionnaire onComplete={saveProfile} />
+      </div>
+    );
+  }
+
+  const hasSavedAnalysis = Boolean(data?.metrics);
+
+  if (!hasSavedAnalysis && !isAnalysisLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/10 pb-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">Growth Engine</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Investment Portfolio</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Your investment profile is saved. Click analyze to generate your report.</p>
+          </div>
+          <Button
+            onClick={() => fetchAnalysis(profile, null)}
+            variant="outline"
+            size="sm"
+            className="rounded-xl text-xs font-semibold border-border/60 hover:border-primary/30 hover:bg-primary/5 hover:text-primary h-9 px-3.5"
+          >
+            <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Analyze Now
+          </Button>
+        </div>
+
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-4">
+          <div className="col-span-1 md:col-span-3">
+            <div className="rounded-3xl border border-border/50 bg-card/60 p-8 text-center shadow-sm">
+              <p className="text-sm font-medium text-muted-foreground mb-3">No saved analysis has been generated yet.</p>
+              <p className="text-base text-foreground mb-6">Your profile is loaded from your account. When you&apos;re ready, click Analyze Now to fetch the latest investment guidance.</p>
+              <Button
+                onClick={() => fetchAnalysis(profile, null)}
+                className="rounded-xl px-6 py-3"
+              >
+                <RefreshCcw className="mr-2 h-4 w-4" /> Analyze Now
+              </Button>
+            </div>
+          </div>
+          <div className="col-span-1 md:col-span-1">
+            <MarketHighlights />
+          </div>
+        </div>
       </div>
     );
   }
@@ -166,22 +209,22 @@ export function InvestmentDashboard() {
           <p className="text-sm text-muted-foreground mt-0.5">Real-time analysis and projection of your financial growth.</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="rounded-xl text-xs font-semibold border-border/60 hover:border-primary/30 hover:bg-primary/5 hover:text-primary h-9 px-3.5" 
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xl text-xs font-semibold border-border/60 hover:border-primary/30 hover:bg-primary/5 hover:text-primary h-9 px-3.5"
             onClick={() => setEditingProfile(true)}
           >
             Edit Profile
           </Button>
-          <Button 
-            onClick={() => fetchAnalysis(profile, null)} 
-            variant="outline" 
-            size="sm" 
-            disabled={isAnalysisLoading} 
+          <Button
+            onClick={() => fetchAnalysis(profile, null)}
+            variant="outline"
+            size="sm"
+            disabled={isAnalysisLoading}
             className="rounded-xl text-xs font-semibold border-border/60 hover:border-primary/30 hover:bg-primary/5 hover:text-primary h-9 px-3.5"
           >
-            <RefreshCcw className={`mr-1.5 h-3.5 w-3.5 ${isAnalysisLoading ? "animate-spin" : ""}`} /> 
+            <RefreshCcw className={`mr-1.5 h-3.5 w-3.5 ${isAnalysisLoading ? "animate-spin" : ""}`} />
             Refresh Analysis
           </Button>
         </div>
@@ -194,8 +237,8 @@ export function InvestmentDashboard() {
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {/* Health Score */}
             <div className="col-span-1">
-              <FinancialHealthCard 
-                score={data.metrics.healthScore} 
+              <FinancialHealthCard
+                score={data.metrics.healthScore}
                 savingsRate={data.metrics.savingsRate}
                 budgetEfficiency={data.metrics.budgetEfficiency}
               />
@@ -208,12 +251,12 @@ export function InvestmentDashboard() {
 
             {/* What-If Simulator */}
             <div className="col-span-1 sm:col-span-2 lg:col-span-1">
-              <WhatIfSimulator 
-                baseMetrics={data.metrics} 
+              <WhatIfSimulator
+                baseMetrics={data.metrics}
                 profile={profile}
                 onSimulate={handleSimulate}
                 onSaveProfileValues={handleSaveProfileValues}
-                isLoading={isAnalysisLoading} 
+                isLoading={isAnalysisLoading}
               />
             </div>
           </div>
@@ -253,7 +296,7 @@ export function InvestmentDashboard() {
               </div>
               <h3 className="text-sm font-bold text-foreground">AI Research Deck</h3>
             </div>
-            
+
             <p className="text-xs text-muted-foreground leading-relaxed">
               Explore portfolios, query allocations, or match financial vehicles.
             </p>
@@ -264,7 +307,7 @@ export function InvestmentDashboard() {
                   <Bot className="h-3.5 w-3.5" /> AI Chat Assistant
                 </Button>
               </a>
-              
+
               <a href="/investment/compare" className="w-full">
                 <Button variant="outline" className="w-full text-xs font-semibold rounded-xl border-border/60 hover:bg-muted/40 py-2.5 h-auto gap-1.5">
                   <LineChart className="h-3.5 w-3.5" /> Compare Options

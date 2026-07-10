@@ -45,8 +45,8 @@ export function Sidebar({ mobile = false, onClose }) {
   };
 
   const wrapperClass = mobile
-    ? "fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-card/95 backdrop-blur-md p-6 shadow-2xl flex flex-col justify-between"
-    : `border-r border-border bg-card/40 backdrop-blur-md min-h-screen sticky top-0 left-0 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out ${isCollapsed ? "w-[72px] p-3" : "w-64 p-6"
+    ? "fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-card/95 backdrop-blur-md p-6 shadow-2xl flex flex-col justify-between h-screen"
+    : `border-r border-border bg-card/40 backdrop-blur-md min-h-screen h-full sticky top-0 left-0 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out ${isCollapsed ? "w-[72px] p-3" : "w-64 p-6"
     }`;
 
   const NavItem = ({ item }) => {
@@ -61,8 +61,8 @@ export function Sidebar({ mobile = false, onClose }) {
               <Link
                 href={item.path}
                 className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${active
-                    ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                  ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                   }`}
               >
                 <Icon size={20} className={active ? "text-primary" : ""} />
@@ -81,8 +81,8 @@ export function Sidebar({ mobile = false, onClose }) {
         href={item.path}
         onClick={() => mobile && onClose?.()}
         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${active
-            ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-            : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+          ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
           }`}
       >
         <Icon size={18} className={active ? "text-primary" : ""} />

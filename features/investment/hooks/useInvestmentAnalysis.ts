@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { RiskProfile, WhatIfScenario, AnalyzeResponse } from "../types";
 
-export function useInvestmentAnalysis() {
-  const [data, setData] = useState<AnalyzeResponse | null>(null);
+export function useInvestmentAnalysis(initialData: AnalyzeResponse | null = null) {
+  const [data, setData] = useState<AnalyzeResponse | null>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
 
   const fetchAnalysis = useCallback(
     async (riskProfile?: RiskProfile | null, whatIfScenario?: WhatIfScenario | null) => {
